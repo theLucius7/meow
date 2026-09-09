@@ -38,5 +38,7 @@ jobs:
         run: pnpm check
       - name: Verify bilingual routes and content isolation
         run: pnpm test:i18n
+      - name: Verify live activity lifecycle
+        run: pnpm test:macflare
       - name: Build site and search index
         run: pnpm build

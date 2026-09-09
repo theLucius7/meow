@@ -71,6 +71,11 @@ export type ProfileConfig = {
 	}[];
 };
 
+export type MacFlareConfig = {
+	enable: boolean;
+	baseUrl: string;
+};
+
 export type LicenseConfig = {
 	enable: boolean;
 	name: string;

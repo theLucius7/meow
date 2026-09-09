@@ -132,6 +132,7 @@ Local profile and banner images use `assets/...` for paths relative to `src/`, o
 | `siteConfig.banner.enable`, `src` | Banner visibility and image |
 | `profileConfig.avatar`, `name`, `bio` | Avatar, author name, and biography |
 | `profileConfig.links` | Sidebar social links and icons |
+| `macFlareConfig.enable`, `baseUrl` | Music and foreground application widget below the profile; see [MacFlare integration](docs/MACFLARE.md) |
 | `navBarConfig.links` | Top navigation |
 | `licenseConfig` | Post license display and link |
 
@@ -140,6 +141,7 @@ Local profile and banner images use `assets/...` for paths relative to `src/`, o
 | `pnpm dev` | Development preview, including drafts |
 | `pnpm new-post zh/name` / `pnpm new-post en/name` | Create a draft for that language; accepts `language/directory/index` and defaults to Chinese when the language is omitted |
 | `pnpm test:i18n` | Test language routes, content isolation, search indexes, and the post generator in a temporary directory |
+| `pnpm test:macflare` | Test activity parsing, expiry, timeouts, and visibility-aware polling without the live service |
 | `pnpm lint` | Read-only code checks |
 | `pnpm lint:fix` | Apply supported code and formatting fixes |
 | `pnpm check` | Astro, Svelte, and TypeScript checks; also available as `type-check` |

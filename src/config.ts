@@ -1,6 +1,7 @@
 import type {
 	ExpressiveCodeConfig,
 	LicenseConfig,
+	MacFlareConfig,
 	NavBarConfig,
 	ProfileConfig,
 	SiteConfig,
@@ -79,6 +80,11 @@ export const licenseConfig: LicenseConfig = {
 	enable: true,
 	name: "CC BY-NC-SA 4.0",
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+};
+
+export const macFlareConfig: MacFlareConfig = {
+	enable: true,
+	baseUrl: "https://macflare.lucius7.dev",
 };
 
 export const expressiveCodeConfig: ExpressiveCodeConfig = {
