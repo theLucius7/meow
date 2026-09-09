@@ -24,6 +24,7 @@ As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lu
 | Math | `remark-math` + `rehype-katex`; styles and fonts ship with the site |
 | Social links | GitHub, X, and LinkedIn |
 | Recent submissions | Latest three accepted Codeforces/AtCoder submissions from OJFlare, with platform icons and direct submission links |
+| About | AC contribution calendar with year and platform filters, using OJFlare's first-acceptance statistics |
 | Footer registration | [ICP registration](https://beian.miit.gov.cn/), preserved in the site footer |
 | Publishing | Style checks, type checks, build, and deployment on updates to `main` |
 
@@ -131,7 +132,11 @@ The banner currently uses [Fuwari's bundled demo image](https://github.com/saica
 
 The sidebar's **Recent Submissions** widget reads [OJFlare's public dashboard API](https://ojflare.lucius7.dev/data/dashboard.json) in the browser. Its schema v2 `accepted` array contains accepted submissions only; failed attempts are not exported. The widget combines Codeforces and AtCoder entries, sorts by submission time, and displays the latest three, including repeated submissions to the same problem. Each row opens the API's original submission URL in a new tab. Problem titles come from the matching `problems` entry; times use the visitor's local time zone.
 
-The widget checks for updates every five minutes while the page is visible, respects HTTP caching, and refreshes when the tab becomes visible again. Data freshness depends on OJFlare's published snapshot. A failed refresh keeps previously loaded records; initial loading, empty results, and unavailable data have distinct Chinese/English states. No API key is needed, and the blog build does not depend on OJFlare availability. Set `ojFlareConfig.enable` to `false` to hide the widget or update `ojFlareConfig.baseUrl` to use a compatible API host. The contract is documented in [OJFlare's API guide](https://github.com/xw7qwq/ojflare/blob/main/docs/API.md).
+The widget checks for updates every five minutes while the page is visible, respects HTTP caching, and refreshes when the tab becomes visible again. Data freshness depends on OJFlare's published snapshot. A failed refresh keeps previously loaded records; initial loading, empty results, and unavailable data have distinct Chinese/English states. No API key is needed, and the blog build does not depend on OJFlare availability. Set `ojFlareConfig.enable` to `false` to hide the OJFlare widgets or update `ojFlareConfig.baseUrl` to use a compatible API host. The contract is documented in [OJFlare's API guide](https://github.com/xw7qwq/ojflare/blob/main/docs/API.md).
+
+The [Chinese About page](https://blog.lucius7.cn/zh/about/) and [English About page](https://blog.lucius7.cn/en/about/) include an **AC Contributions** calendar. `/about/` keeps its existing redirect to `/zh/about/`. Each square counts problems first accepted on that date, after deduplicating the complete accepted history by `problemId`; repeated ACs in later years do not become new problems. Dates follow OJFlare's **Asia/Taipei (UTC+8)** convention. Undated solves are excluded. The default view shows the current calendar year across AtCoder, Codeforces, QOJ, and Nowcoder, with year/platform selectors and annual problem/active-day totals. Color levels match OJFlare: 0, 1–2, 3–5, 6–9, and 10 or more new problems. Future cells are disabled.
+
+Hover or select a day to inspect its date and first-AC count. Keyboard users can enter the calendar with Tab, move between days with arrow keys, and use Home/End for its first/last available day. On narrow screens, scroll the calendar horizontally. The contribution calendar and recent-submissions card share one dashboard request and polling loop; entering or leaving About keeps the sidebar subscription working. Empty histories render an empty calendar, while loading and unavailable states remain distinct.
 
 | Setting in `src/config.ts` | Purpose |
 | --- | --- |
@@ -141,7 +146,7 @@ The widget checks for updates every five minutes while the page is visible, resp
 | `profileConfig.avatar`, `name`, `bio` | Avatar, author name, and biography |
 | `profileConfig.links` | Sidebar social links and icons |
 | `macFlareConfig.enable`, `baseUrl` | Application and music icons beside the blog title; see [MacFlare integration](docs/MACFLARE.md) |
-| `ojFlareConfig.enable`, `baseUrl` | Recent accepted submissions below the profile card |
+| `ojFlareConfig.enable`, `baseUrl` | Recent accepted submissions below the profile card and the About contribution calendar |
 | `navBarConfig.links` | Top navigation |
 | `licenseConfig` | Post license display and link |
 
@@ -151,7 +156,7 @@ The widget checks for updates every five minutes while the page is visible, resp
 | `pnpm new-post zh/name` / `pnpm new-post en/name` | Create a draft for that language; accepts `language/directory/index` and defaults to Chinese when the language is omitted |
 | `pnpm test:i18n` | Test language routes, content isolation, search indexes, and the post generator in a temporary directory |
 | `pnpm test:macflare` | Test activity parsing, expiry, timeouts, and visibility-aware polling without the live service |
-| `pnpm test:ojflare` | Test submission ordering, URL validation, failure recovery, timeouts, and visibility-aware polling without the live API |
+| `pnpm test:ojflare` | Test submission links, shared polling, failure recovery, first-AC counts, UTC+8 dates, leap years, calendar alignment, and platform filters without the live API |
 | `pnpm lint` | Read-only code checks |
 | `pnpm lint:fix` | Apply supported code and formatting fixes |
 | `pnpm check` | Astro, Svelte, and TypeScript checks; also available as `type-check` |

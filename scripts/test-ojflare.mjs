@@ -1,7 +1,7 @@
 /** Run: node --experimental-strip-types --test scripts/test-ojflare.mjs */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseRecentSubmissions, subscribeRecentSubmissions } from "../src/utils/ojflare.ts";
+import { parseRecentSubmissions, subscribeOJFlareDashboard, subscribeRecentSubmissions } from "../src/utils/ojflare.ts";
 
 const BASE = "https://ojflare.example.test";
 
@@ -80,10 +80,17 @@ function harness(t, { hidden = false, ignoreAbort = false } = {}) {
   const h = {
     requests, updates,
     latest: () => updates.at(-1),
-    start() {
-      const dispose = subscribeRecentSubmissions(BASE, (state) => updates.push(structuredClone(state)));
+    listenerCount: () => listeners.size,
+    start(baseUrl = BASE) {
+      const dispose = subscribeRecentSubmissions(baseUrl, (state) => updates.push(structuredClone(state)));
       disposers.push(dispose);
       return dispose;
+    },
+    startDashboard(baseUrl = BASE) {
+      const states = [];
+      const dispose = subscribeOJFlareDashboard(baseUrl, (state) => states.push(structuredClone(state)));
+      disposers.push(dispose);
+      return { states, dispose, latest: () => states.at(-1) };
     },
     visibility(hidden) { page.hidden = hidden; page.dispatchEvent(new Event("visibilitychange")); },
     async advance(milliseconds) { t.mock.timers.tick(milliseconds); await settle(); },
@@ -325,4 +332,126 @@ test("dispose aborts work and prevents requests or updates after late responses 
   await h.advance(900_000);
   assert.equal(h.requests.length, 1);
   assert.equal(h.updates.length, 1);
+});
+
+test("the sidebar and dashboard subscriber share one request and retain the complete payload", async (t) => {
+  const h = harness(t);
+  h.start();
+  const about = h.startDashboard();
+  assert.equal(h.requests.length, 1);
+  assert.equal(h.listenerCount(), 1, "A shared client needs only one visibility listener");
+  assert.deepEqual(about.latest(), { status: "loading", data: null });
+  const data = {
+    ...dashboard(),
+    generatedAt: "2030-01-01T00:00:00Z",
+    timezone: "Asia/Shanghai",
+    sources: [{ platform: "codeforces", handle: "example" }],
+    attempted: [{ problemId: "atcoder:problem-b", count: 2 }],
+    extraHeatmapField: { day: "2030-01-01", count: 3 },
+  };
+  await h.respond(data);
+  assert.deepEqual(about.latest(), { status: "ready", data });
+  assert.equal(h.latest().submissions[0].id, "1");
+  await h.advance(300_000);
+  assert.equal(h.requests.length, 2, "Both subscribers must use one polling loop");
+});
+
+test("entering and leaving about reuses the sidebar cache without fetching or resetting its polling deadline", async (t) => {
+  const h = harness(t);
+  h.start();
+  const data = dashboard();
+  await h.respond(data);
+  for (let visit = 0; visit < 3; visit++) {
+    const about = h.startDashboard();
+    assert.deepEqual(about.latest(), { status: "ready", data });
+    assert.equal(h.requests.length, 1);
+    about.dispose();
+  }
+  await h.advance(299_999);
+  const about = h.startDashboard();
+  assert.equal(h.requests.length, 1);
+  await h.advance(1);
+  assert.equal(h.requests.length, 2);
+  about.dispose();
+  assert.equal(h.requests[1].options.signal.aborted, false, "Leaving about must not cancel the sidebar's refresh");
+  const count = about.states.length;
+  await h.respond(dashboard([submission(2, 1_800_000_000)]));
+  assert.equal(h.latest().submissions[0].id, "2");
+  assert.equal(about.states.length, count, "An unsubscribed component must stop receiving updates");
+});
+
+test("unsubscribing the sidebar leaves an active dashboard subscription working", async (t) => {
+  const h = harness(t);
+  const stopSidebar = h.start();
+  const about = h.startDashboard();
+  stopSidebar();
+  stopSidebar();
+  assert.equal(h.requests[0].options.signal.aborted, false);
+  assert.equal(h.listenerCount(), 1);
+  await h.respond();
+  assert.equal(about.latest().status, "ready");
+  assert.equal(h.updates.length, 1);
+  await h.advance(300_000);
+  assert.equal(h.requests.length, 2);
+  about.dispose();
+  assert.equal(h.requests[1].options.signal.aborted, true, "The last subscriber must cancel the request");
+  assert.equal(h.listenerCount(), 0);
+});
+
+test("different dashboard origins stay isolated while equivalent base URLs share their endpoint", async (t) => {
+  const h = harness(t);
+  const first = h.startDashboard(BASE);
+  const equivalent = h.startDashboard("https://OJFLARE.example.test/unused/base/");
+  const second = h.startDashboard("https://other.example.test");
+  assert.equal(h.requests.length, 2);
+  h.requests[0].respond(dashboard([submission(1, 100)]));
+  h.requests[1].respond(dashboard([submission(2, 200)]));
+  await settle();
+  assert.equal(first.latest().data.accepted[0].id, 1);
+  assert.equal(equivalent.latest().data.accepted[0].id, 1);
+  assert.equal(second.latest().data.accepted[0].id, 2);
+  first.dispose();
+  equivalent.dispose();
+  await h.advance(300_000);
+  assert.equal(h.requests.length, 3);
+  assert.equal(h.requests[2].url.origin, "https://other.example.test");
+});
+
+test("shared schema failures report initial unavailability and preserve complete successful snapshots later", async (t) => {
+  const h = harness(t);
+  const about = h.startDashboard();
+  h.start();
+  await h.respond({ schemaVersion: 1, accepted: [], problems: [] });
+  assert.deepEqual(about.latest(), { status: "unavailable", data: null });
+  assert.equal(h.latest().status, "unavailable");
+  await h.advance(300_000);
+  const data = { ...dashboard(), generatedAt: "2030-01-01T00:00:00Z" };
+  await h.respond(data);
+  await h.advance(300_000);
+  await h.respond({ schemaVersion: 2, accepted: null, problems: [] });
+  assert.deepEqual(about.latest(), { status: "ready", data });
+  assert.equal(h.latest().status, "ready");
+  const nextVisit = h.startDashboard();
+  assert.deepEqual(nextVisit.latest(), { status: "ready", data });
+  assert.equal(h.requests.length, 3);
+});
+
+test("releasing the last subscriber clears the client and old late responses cannot reach a replacement", async (t) => {
+  const h = harness(t, { ignoreAbort: true });
+  const about = h.startDashboard();
+  const stopSidebar = h.start();
+  about.dispose();
+  stopSidebar();
+  const old = h.requests[0];
+  assert.equal(old.options.signal.aborted, true);
+  assert.equal(h.listenerCount(), 0);
+  const replacement = h.startDashboard();
+  assert.equal(h.requests.length, 2);
+  assert.deepEqual(replacement.latest(), { status: "loading", data: null });
+  old.respond(dashboard([submission(1, 100)]));
+  await settle();
+  assert.deepEqual(replacement.latest(), { status: "loading", data: null });
+  await h.respond(dashboard([submission(2, 200)]));
+  assert.equal(replacement.latest().data.accepted[0].id, 2);
+  assert.equal(about.states.length, 1);
 });

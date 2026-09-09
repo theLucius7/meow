@@ -43,7 +43,7 @@ Dependabot groups Expressive Code's core, Astro integration, and plugins to avoi
 
 Changes to language routing, content filtering, search, or the post generator also require `pnpm test:i18n`. Preview both `/zh/` and `/en/`: the same query should return only the active language, a language switch should update the whole interface, and a missing translation should lead to the target language's home page. The test creates posts in a temporary directory without changing real content. See the [bilingual content guide](docs/I18N.md).
 
-Changes to the recent-submissions widget or its OJFlare integration also require `pnpm test:ojflare`. Verify both interface languages and direct submission links in the browser; the public API exports accepted submissions only.
+Changes to the OJFlare widgets or their integration also require `pnpm test:ojflare`. Verify both interface languages, direct submission links, About calendar filters, and shared requests across page navigation. The public API exports accepted submissions only; the contribution calendar counts each problem's first AC in UTC+8, while recent submissions retain repeat ACs.
 
 ## PR workflow
 
