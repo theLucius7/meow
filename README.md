@@ -23,6 +23,7 @@ As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lu
 | Reading | Light and dark themes, categories, tags, Pagefind search, RSS, and sitemap |
 | Math | `remark-math` + `rehype-katex`; styles and fonts ship with the site |
 | Social links | GitHub, X, and LinkedIn |
+| Recent submissions | Latest three accepted Codeforces/AtCoder submissions from OJFlare, with platform icons and direct submission links |
 | Footer registration | [ICP registration](https://beian.miit.gov.cn/), preserved in the site footer |
 | Publishing | Style checks, type checks, build, and deployment on updates to `main` |
 
@@ -128,6 +129,10 @@ Local profile and banner images use `assets/...` for paths relative to `src/`, o
 
 The banner currently uses [Fuwari's bundled demo image](https://github.com/saicaca/fuwari/blob/main/src/assets/images/demo-banner.png) with the theme's default layout on both language home pages. To replace it, add an image under `src/assets/images/` and update `siteConfig.banner.src` in `src/config.ts`, for example `"assets/images/banner.jpg"`. Use `siteConfig.banner.position` to adjust the crop (`"top"`, `"center"`, or `"bottom"`), and `siteConfig.banner.credit` to display the image source when needed. Set `siteConfig.banner.enable` to `false` to hide the banner.
 
+The sidebar's **Recent Submissions** widget reads [OJFlare's public dashboard API](https://ojflare.lucius7.dev/data/dashboard.json) in the browser. Its schema v2 `accepted` array contains accepted submissions only; failed attempts are not exported. The widget combines Codeforces and AtCoder entries, sorts by submission time, and displays the latest three, including repeated submissions to the same problem. Each row opens the API's original submission URL in a new tab. Problem titles come from the matching `problems` entry; times use the visitor's local time zone.
+
+The widget checks for updates every five minutes while the page is visible, respects HTTP caching, and refreshes when the tab becomes visible again. Data freshness depends on OJFlare's published snapshot. A failed refresh keeps previously loaded records; initial loading, empty results, and unavailable data have distinct Chinese/English states. No API key is needed, and the blog build does not depend on OJFlare availability. Set `ojFlareConfig.enable` to `false` to hide the widget or update `ojFlareConfig.baseUrl` to use a compatible API host. The contract is documented in [OJFlare's API guide](https://github.com/xw7qwq/ojflare/blob/main/docs/API.md).
+
 | Setting in `src/config.ts` | Purpose |
 | --- | --- |
 | `siteConfig.title`, `subtitle` | Site name and subtitle; `/zh/` or `/en/` determines the interface language |
@@ -136,6 +141,7 @@ The banner currently uses [Fuwari's bundled demo image](https://github.com/saica
 | `profileConfig.avatar`, `name`, `bio` | Avatar, author name, and biography |
 | `profileConfig.links` | Sidebar social links and icons |
 | `macFlareConfig.enable`, `baseUrl` | Application and music icons beside the blog title; see [MacFlare integration](docs/MACFLARE.md) |
+| `ojFlareConfig.enable`, `baseUrl` | Recent accepted submissions below the profile card |
 | `navBarConfig.links` | Top navigation |
 | `licenseConfig` | Post license display and link |
 
@@ -145,6 +151,7 @@ The banner currently uses [Fuwari's bundled demo image](https://github.com/saica
 | `pnpm new-post zh/name` / `pnpm new-post en/name` | Create a draft for that language; accepts `language/directory/index` and defaults to Chinese when the language is omitted |
 | `pnpm test:i18n` | Test language routes, content isolation, search indexes, and the post generator in a temporary directory |
 | `pnpm test:macflare` | Test activity parsing, expiry, timeouts, and visibility-aware polling without the live service |
+| `pnpm test:ojflare` | Test submission ordering, URL validation, failure recovery, timeouts, and visibility-aware polling without the live API |
 | `pnpm lint` | Read-only code checks |
 | `pnpm lint:fix` | Apply supported code and formatting fixes |
 | `pnpm check` | Astro, Svelte, and TypeScript checks; also available as `type-check` |
@@ -160,3 +167,5 @@ Dependabot PRs are update proposals. Review compatibility, validate the current 
 Report problems or content corrections through [Issues](https://github.com/xw7qwq/nfuwari/issues). Read [CONTRIBUTING.md](CONTRIBUTING.md) for submission conventions and the [upstream repository](https://github.com/saicaca/fuwari) for general Fuwari documentation.
 
 Thanks to Fuwari, Astro, and the open-source projects used here. Project code retains the [MIT license](LICENSE) and original attribution. The post license is configured in `src/config.ts`; images and other third-party materials retain their own licenses.
+
+Platform icons are bundled under `src/assets/icons/`: the Codeforces SVG comes from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/codeforces.svg), distributed under [CC0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md); the AtCoder image is its [official favicon](https://img.atcoder.jp/assets/favicon.png). Platform names and logos belong to their respective owners.
