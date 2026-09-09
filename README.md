@@ -132,7 +132,7 @@ Local profile and banner images use `assets/...` for paths relative to `src/`, o
 | `siteConfig.banner.enable`, `src` | Banner visibility and image |
 | `profileConfig.avatar`, `name`, `bio` | Avatar, author name, and biography |
 | `profileConfig.links` | Sidebar social links and icons |
-| `macFlareConfig.enable`, `baseUrl` | Music and foreground application widget below the profile; see [MacFlare integration](docs/MACFLARE.md) |
+| `macFlareConfig.enable`, `baseUrl` | Application and music icons beside the blog title; see [MacFlare integration](docs/MACFLARE.md) |
 | `navBarConfig.links` | Top navigation |
 | `licenseConfig` | Post license display and link |
 
