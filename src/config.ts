@@ -56,7 +56,7 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "https://q1.qlogo.cn/g?b=qq&nk=3012967200&s=640", // QQ 头像，直接使用腾讯 HTTPS 接口
 	name: "Lucius7",
-	bio: "",
+	bio: "空のない世界に、花の香り描き",
 	links: [
 		{
 			name: "GitHub",
