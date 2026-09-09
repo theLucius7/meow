@@ -1,11 +1,13 @@
 ---
 import { getEntry, render } from "astro:content";
 import Markdown from "@components/misc/Markdown.astro";
+import OJContributions from "@components/OJContributions.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { type Locale, locales } from "@i18n/locales";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { localeUrl } from "@utils/url-utils";
+import { ojFlareConfig } from "@/config";
 
 export function getStaticPaths() {
 	return locales.map((locale) => ({ params: { locale } }));
@@ -33,4 +35,13 @@ const alternates = locales.map((language) => ({
             </Markdown>
         </div>
     </div>
+    {ojFlareConfig.enable && (
+        <section class="card-base relative mt-4 min-w-0 p-4 sm:p-6" aria-labelledby="ac-contributions-heading">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <h2 id="ac-contributions-heading" class="text-xl font-bold text-90">{locale === "en" ? "AC Contributions" : "AC 贡献图"}</h2>
+                <a href={ojFlareConfig.baseUrl} target="_blank" rel="noopener noreferrer" class="text-sm text-[var(--primary)] hover:underline" aria-label={locale === "en" ? "View OJFlare" : "查看 OJFlare"}>OJFlare ↗</a>
+            </div>
+            <OJContributions client:load locale={locale} baseUrl={ojFlareConfig.baseUrl} />
+        </section>
+    )}
 </MainGridLayout>

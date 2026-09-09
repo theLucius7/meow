@@ -11,6 +11,11 @@ export type SubmissionState = {
 	submissions: RecentSubmission[];
 };
 
+export type OJFlareDashboardState = {
+	status: "loading" | "ready" | "unavailable";
+	data: unknown | null;
+};
+
 const POLL_INTERVAL_MS = 300_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 
@@ -64,8 +69,7 @@ function submissionUrl(
 	}
 }
 
-/** OJFlare schema v2 exposes individual accepted submissions, not all verdicts. */
-export function parseRecentSubmissions(value: unknown): RecentSubmission[] {
+function dashboardCollections(value: unknown) {
 	const data = record(value);
 	if (
 		data.schemaVersion !== 2 ||
@@ -74,6 +78,12 @@ export function parseRecentSubmissions(value: unknown): RecentSubmission[] {
 	) {
 		throw new Error("Invalid OJFlare dashboard");
 	}
+	return { accepted: data.accepted, problems: data.problems };
+}
+
+/** OJFlare schema v2 exposes individual accepted submissions, not all verdicts. */
+export function parseRecentSubmissions(value: unknown): RecentSubmission[] {
+	const data = dashboardCollections(value);
 	const titles = new Map<string, string>();
 	for (const value of data.problems) {
 		const problem = record(value);
@@ -125,22 +135,26 @@ export function parseRecentSubmissions(value: unknown): RecentSubmission[] {
 		.slice(0, 3);
 }
 
-/** Fetch the public cached snapshot only while a browser page is visible. */
-export function subscribeRecentSubmissions(
-	baseUrl: string,
-	onUpdate: (state: SubmissionState) => void,
-): () => void {
+type DashboardListener = (state: OJFlareDashboardState) => void;
+type DashboardClient = {
+	subscribe: (onUpdate: DashboardListener) => () => void;
+};
+
+const dashboardClients = new Map<string, DashboardClient>();
+
+function createDashboardClient(endpoint: string): DashboardClient {
 	let stopped = false;
-	let state: SubmissionState = { status: "loading", submissions: [] };
+	let started = false;
+	let state: OJFlareDashboardState = { status: "loading", data: null };
+	const listeners = new Set<DashboardListener>();
 	let pollTimer: ReturnType<typeof setTimeout> | undefined;
 	let activeRequest: AbortController | undefined;
 	const page = document;
 	const publish = () => {
-		if (!stopped)
-			onUpdate({
-				...state,
-				submissions: state.submissions.map((item) => ({ ...item })),
-			});
+		if (stopped) return;
+		for (const listener of [...listeners]) {
+			if (listeners.has(listener)) listener({ ...state });
+		}
 	};
 	const poll = async () => {
 		if (stopped || page.hidden || activeRequest) return;
@@ -149,7 +163,7 @@ export function subscribeRecentSubmissions(
 		activeRequest = controller;
 		const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 		try {
-			const response = await fetch(new URL("/data/dashboard.json", baseUrl), {
+			const response = await fetch(endpoint, {
 				signal: controller.signal,
 				credentials: "omit",
 				referrerPolicy: "no-referrer",
@@ -163,7 +177,8 @@ export function subscribeRecentSubmissions(
 				controller.signal.aborted
 			)
 				return;
-			state = { status: "ready", submissions: parseRecentSubmissions(data) };
+			dashboardCollections(data);
+			state = { status: "ready", data };
 			publish();
 		} catch {
 			if (
@@ -172,7 +187,7 @@ export function subscribeRecentSubmissions(
 				activeRequest === controller &&
 				state.status !== "ready"
 			) {
-				state = { status: "unavailable", submissions: [] };
+				state = { status: "unavailable", data: null };
 				publish();
 			}
 		} finally {
@@ -193,13 +208,53 @@ export function subscribeRecentSubmissions(
 			void poll();
 		}
 	};
-	page.addEventListener("visibilitychange", onVisibility);
-	publish();
-	void poll();
-	return () => {
-		stopped = true;
-		clearTimeout(pollTimer);
-		activeRequest?.abort();
-		page.removeEventListener("visibilitychange", onVisibility);
+	return {
+		subscribe(onUpdate) {
+			// Separate registrations remain independent even with the same callback.
+			const listener: DashboardListener = (next) => onUpdate(next);
+			listeners.add(listener);
+			listener({ ...state });
+			if (!started) {
+				started = true;
+				page.addEventListener("visibilitychange", onVisibility);
+				void poll();
+			}
+			return () => {
+				if (!listeners.delete(listener) || listeners.size > 0) return;
+				stopped = true;
+				clearTimeout(pollTimer);
+				activeRequest?.abort();
+				page.removeEventListener("visibilitychange", onVisibility);
+				dashboardClients.delete(endpoint);
+			};
+		},
 	};
+}
+
+/** Share one visible-page polling loop and treat the complete cached data as read-only. */
+export function subscribeOJFlareDashboard(
+	baseUrl: string,
+	onUpdate: DashboardListener,
+): () => void {
+	const endpoint = new URL("/data/dashboard.json", baseUrl).href;
+	let client = dashboardClients.get(endpoint);
+	if (!client) {
+		client = createDashboardClient(endpoint);
+		dashboardClients.set(endpoint, client);
+	}
+	return client.subscribe(onUpdate);
+}
+
+/** Derive the sidebar list without starting a separate dashboard request. */
+export function subscribeRecentSubmissions(
+	baseUrl: string,
+	onUpdate: (state: SubmissionState) => void,
+): () => void {
+	return subscribeOJFlareDashboard(baseUrl, (state) => {
+		onUpdate({
+			status: state.status,
+			submissions:
+				state.status === "ready" ? parseRecentSubmissions(state.data) : [],
+		});
+	});
 }
