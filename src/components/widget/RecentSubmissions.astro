@@ -1,0 +1,19 @@
+---
+import { ojFlareConfig } from "@/config";
+import { getLocaleFromPath } from "@/i18n/locales";
+import SubmissionList from "../RecentSubmissions.svelte";
+import WidgetLayout from "./WidgetLayout.astro";
+
+const locale = getLocaleFromPath(Astro.url.pathname);
+---
+
+{ojFlareConfig.enable && (
+    <WidgetLayout
+        id="recent-submissions"
+        name={locale === "en" ? "Recent Submissions" : "最近提交"}
+        class="onload-animation"
+        style="animation-delay: 100ms"
+    >
+        <SubmissionList client:load locale={locale} baseUrl={ojFlareConfig.baseUrl} />
+    </WidgetLayout>
+)}

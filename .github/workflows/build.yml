@@ -40,5 +40,7 @@ jobs:
         run: pnpm test:i18n
       - name: Verify live activity lifecycle
         run: pnpm test:macflare
+      - name: Verify recent submission parsing and polling
+        run: pnpm test:ojflare
       - name: Build site and search index
         run: pnpm build

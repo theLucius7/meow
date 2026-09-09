@@ -76,6 +76,11 @@ export type MacFlareConfig = {
 	baseUrl: string;
 };
 
+export type OJFlareConfig = {
+	enable: boolean;
+	baseUrl: string;
+};
+
 export type LicenseConfig = {
 	enable: boolean;
 	name: string;

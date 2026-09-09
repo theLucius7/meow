@@ -3,6 +3,7 @@ import type {
 	LicenseConfig,
 	MacFlareConfig,
 	NavBarConfig,
+	OJFlareConfig,
 	ProfileConfig,
 	SiteConfig,
 } from "./types/config";
@@ -85,6 +86,11 @@ export const licenseConfig: LicenseConfig = {
 export const macFlareConfig: MacFlareConfig = {
 	enable: true,
 	baseUrl: "https://macflare.lucius7.dev",
+};
+
+export const ojFlareConfig: OJFlareConfig = {
+	enable: true,
+	baseUrl: "https://ojflare.lucius7.dev",
 };
 
 export const expressiveCodeConfig: ExpressiveCodeConfig = {
