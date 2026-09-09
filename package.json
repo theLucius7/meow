@@ -12,6 +12,7 @@
     "type-check": "astro check",
     "new-post": "node scripts/new-post.js",
     "test:i18n": "node scripts/test-i18n.mjs",
+    "test:macflare": "node --experimental-strip-types --test scripts/test-macflare.mjs",
     "format": "biome format --write ./src",
     "lint": "biome check ./src",
     "preinstall": "npx only-allow pnpm",
