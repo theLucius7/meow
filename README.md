@@ -22,7 +22,7 @@ As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lu
 | Writing | Markdown; new posts are drafts visible in local development |
 | Reading | Light and dark themes, categories, tags, Pagefind search, RSS, and sitemap |
 | Math | `remark-math` + `rehype-katex`; styles and fonts ship with the site |
-| Social links | GitHub, X, and LinkedIn |
+| Social links | GitHub, X, Bilibili, and email (`i@lucius7.dev`) |
 | Recent submissions | Latest three accepted Codeforces/AtCoder submissions from OJFlare, with platform icons and direct submission links |
 | About | AC contribution calendar with year and platform filters, using OJFlare's first-acceptance statistics |
 | Footer registration | [ICP registration](https://beian.miit.gov.cn/), preserved in the site footer |
