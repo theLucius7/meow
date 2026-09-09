@@ -1,12 +1,13 @@
 ---
 import { Icon } from "astro-icon/components";
 import { getLocaleFromPath, type Locale } from "@/i18n/locales";
-import { navBarConfig, siteConfig } from "../config";
+import { macFlareConfig, navBarConfig, siteConfig } from "../config";
 import { getLinkPresets } from "../constants/link-presets";
 import { LinkPreset, type NavBarLink } from "../types/config";
 import { localeUrl, url } from "../utils/url-utils";
 import LanguageSwitcher from "./LanguageSwitcher.astro";
 import LightDarkSwitch from "./LightDarkSwitch.svelte";
+import MacFlare from "./MacFlare.svelte";
 import Search from "./Search.svelte";
 import DisplaySettings from "./widget/DisplaySettings.svelte";
 import NavMenuPanel from "./widget/NavMenuPanel.astro";
@@ -34,12 +35,15 @@ let links: NavBarLink[] = navBarConfig.links.map(
     <div class:list={[
         className,
         "card-base !overflow-visible max-w-[var(--page-width)] h-[4.5rem] !rounded-t-none mx-auto flex items-center justify-between gap-1 px-2 sm:px-4"]}>
+        <div class="flex min-w-0 items-center gap-1">
         <a href={localeUrl(locale)} class="btn-plain scale-animation rounded-lg h-[3.25rem] min-w-0 px-1 sm:px-3 font-bold active:scale-95">
             <div class="flex min-w-0 flex-row text-[var(--primary)] items-center text-md">
                 <Icon name="material-symbols:home-outline-rounded" class="hidden sm:block shrink-0 text-[1.75rem] mb-1 mr-2" />
                 <span class="truncate">{siteConfig.title}</span>
             </div>
         </a>
+        {macFlareConfig.enable && <MacFlare client:load locale={locale} baseUrl={macFlareConfig.baseUrl} />}
+        </div>
         <div class="hidden lg:flex shrink-0">
             {links.map((l) => {
                 return <a aria-label={l.name} href={l.external ? l.url : localeUrl(locale, l.url)} target={l.external ? "_blank" : null}
@@ -52,7 +56,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
                 </a>;
             })}
         </div>
-        <div class="flex shrink-0 items-center">
+        <div class="navbar-controls flex shrink-0 items-center">
             <LanguageSwitcher locale={locale} alternates={alternates} />
             <Search locale={locale} client:only="svelte"></Search>
             {!siteConfig.themeColor.fixed && (
@@ -69,6 +73,16 @@ let links: NavBarLink[] = navBarConfig.links.map(
         <DisplaySettings locale={locale} client:only="svelte"></DisplaySettings>
     </div>
 </div>
+
+<style>
+    @media (max-width: 639px) {
+        .navbar-controls :global(#search-switch),
+        .navbar-controls :global(#scheme-switch),
+        .navbar-controls :global(#nav-menu-switch) {
+            width: 2rem;
+        }
+    }
+</style>
 
 <script>
 function loadButtonScript() {

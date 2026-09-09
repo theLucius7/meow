@@ -1,6 +1,7 @@
 /** Run with Node 22: node --experimental-strip-types --test scripts/test-macflare.mjs */
 import assert from "node:assert/strict";
 import test from "node:test";
+import { compactArtworkUrl } from "../src/utils/macflare-images.ts";
 import {
   emptyActivity,
   parseActivitySnapshot,
@@ -231,6 +232,88 @@ test("unsafe artwork and track URLs are omitted while safe music text remains", 
   const data = payload();
   data.music.track_url = "https://itunes.apple.com/us/album/123";
   assert.equal(parseActivitySnapshot(data).state.music.trackUrl, data.music.track_url);
+});
+
+const THUMBNAIL_PATH = "/image/thumb/Music211/v4/ab/cd/ef/abc-123/Album_Cover.jpg/";
+
+test("compact artwork uses a 64px JPEG on the original Apple CDN across known source formats", () => {
+  const examples = [
+    ["is1-ssl.mzstatic.com", "600x600bb.jpg"],
+    ["is2.mzstatic.com", "1200x1200bb.jpeg"],
+    ["is3-ssl.mzstatic.com", "3000x3000bb-100.png"],
+    ["is10.mzstatic.com", "800x800bb.webp"],
+  ];
+  for (const [host, image] of examples) {
+    const original = `https://${host}${THUMBNAIL_PATH}${image}`;
+    const compact = compactArtworkUrl(original);
+    assert.equal(compact, `https://${host}${THUMBNAIL_PATH}64x64bb-60.jpg`, original);
+    assert.equal(new URL(compact).origin, new URL(original).origin, "Resizing must not introduce an image proxy");
+    assert.equal(compactArtworkUrl(compact), compact, "Compacting an already compact URL must be stable");
+  }
+});
+
+test("compact artwork never enlarges small covers or changes rectangular crops", () => {
+  for (const image of ["1x1bb.jpg", "32x32bb-80.png", "63x63bb.webp", "600x400bb.jpg", "40x80bb.jpeg"]) {
+    const original = `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}${image}`;
+    assert.equal(compactArtworkUrl(original), original, image);
+  }
+  const boundary = `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}64x64bb.png`;
+  assert.equal(compactArtworkUrl(boundary), `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}64x64bb-60.jpg`);
+});
+
+test("signed URLs, unknown Apple paths, and unsupported image transformations retain their exact original URL", () => {
+  const standard = `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}600x600bb.jpg`;
+  const originals = [
+    `${standard}?token=AbC%2F123&expires=2000000000`,
+    `${standard}?format=webp`,
+    `${standard}#original-cover`,
+    standard.replace("/Music211/", "/Podcasts211/"),
+    standard.replace("/v4/", "/v5/"),
+    standard.replace("/image/thumb/", "/image/"),
+    standard.replace("600x600bb.jpg", "600x600cc.jpg"),
+    standard.replace("600x600bb.jpg", "600x600bb.gif"),
+    standard.replace("600x600bb.jpg", "cover-original.jpg"),
+    standard.replace("is1-ssl", "a1"),
+    ARTWORK,
+  ];
+  for (const original of originals) assert.equal(compactArtworkUrl(original), original);
+});
+
+test("artwork compaction does not rewrite unsafe URLs or inputs normalized by the URL parser", () => {
+  const standard = `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}600x600bb.jpg`;
+  const originals = [
+    "javascript:alert(1)",
+    "data:image/svg+xml,<svg/>",
+    "not a URL",
+    standard.replace("https:", "http:"),
+    standard.replace("https:", ""),
+    standard.replace("is1-ssl.mzstatic.com", "is1-ssl.mzstatic.com.attacker.test"),
+    standard.replace("is1-ssl.mzstatic.com", "evil-mzstatic.com"),
+    standard.replace("is1-ssl.mzstatic.com", "127.0.0.1"),
+    standard.replace("is1-ssl.mzstatic.com", "user:password@is1-ssl.mzstatic.com"),
+    standard.replace("is1-ssl.mzstatic.com", "is1-ssl.mzstatic.com:8443"),
+    standard.replace("/ab/cd/", "/ab/../cd/"),
+    standard.replace("/ab/cd/", "/ab/%2e%2e/cd/"),
+    standard.replace("/ab/cd/", "/ab/%2f/cd/"),
+    standard.replace("/ab/cd/", "/ab\\cd/"),
+    standard.replace("/ab/cd/", "/ab/\tcd/"),
+    standard.replace("/ab/cd/", "/ab/\u007fcd/"),
+    ` ${standard}`,
+    `${standard}\n`,
+  ];
+  // This helper is deliberately a conservative transformer, not the URL validator.
+  // Rejected artwork URLs are separately covered by parseActivitySnapshot tests.
+  for (const original of originals) assert.equal(compactArtworkUrl(original), original);
+});
+
+test("compacting a validated cover preserves the original snapshot URL for image-load fallback", () => {
+  const original = `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}1200x1200bb.jpg`;
+  const data = payload();
+  data.music.artwork_url = original;
+  const snapshot = parseActivitySnapshot(data);
+  assert.equal(compactArtworkUrl(snapshot.state.music.artworkUrl), `https://is1-ssl.mzstatic.com${THUMBNAIL_PATH}64x64bb-60.jpg`);
+  assert.equal(snapshot.state.music.artworkUrl, original);
+  assert.equal(data.music.artwork_url, original);
 });
 
 test("app names and aliases normalize Unicode, spaces, and case without guessing unknown apps", () => {
