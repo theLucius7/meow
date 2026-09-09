@@ -9,7 +9,7 @@ Source for [blog.lucius7.cn](https://blog.lucius7.cn/), built with [Fuwari](http
 
 ## Current state
 
-As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lucius7.cn/zh/) and [English](https://blog.lucius7.cn/en/) entry points. Template posts, images, and default profile details have been removed. The post directories start empty; each home page shows an empty state until a public post is added. Posts from the previous AstroPaper blog have not yet been migrated.
+As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lucius7.cn/zh/) and [English](https://blog.lucius7.cn/en/) entry points. Template posts and default profile details have been removed. Fuwari's default banner image is enabled; other template images remain removed. The post directories start empty; each home page shows an empty state until a public post is added. Posts from the previous AstroPaper blog have not yet been migrated.
 
 | Item | Configuration |
 | --- | --- |
@@ -18,6 +18,7 @@ As of September 9, 2026, "Lucius7's Blog" has separate [Chinese](https://blog.lu
 | Author | Lucius7 |
 | Avatar | QQ account `3012967200`, through Tencent's HTTPS avatar endpoint |
 | Site icon | `public/icon.svg`, an L7 wordmark |
+| Banner | Fuwari's default `src/assets/images/demo-banner.png`, centered and processed by Astro |
 | Writing | Markdown; new posts are drafts visible in local development |
 | Reading | Light and dark themes, categories, tags, Pagefind search, RSS, and sitemap |
 | Math | `remark-math` + `rehype-katex`; styles and fonts ship with the site |
@@ -124,6 +125,8 @@ See the [deployment guide](docs/DEPLOYMENT.md) for regular updates, failures, an
 `profileConfig.avatar` currently uses Tencent's endpoint directly: `https://q1.qlogo.cn/g?b=qq&nk=3012967200&s=640`. Changes to the QQ avatar appear once browser and endpoint caches refresh; no repository image replacement is needed.
 
 Local profile and banner images use `assets/...` for paths relative to `src/`, or `/images/...` for files in `public/`. See [Images](docs/WRITING.md#images) for post cover and body image paths.
+
+The banner currently uses [Fuwari's bundled demo image](https://github.com/saicaca/fuwari/blob/main/src/assets/images/demo-banner.png) with the theme's default layout on both language home pages. To replace it, add an image under `src/assets/images/` and update `siteConfig.banner.src` in `src/config.ts`, for example `"assets/images/banner.jpg"`. Use `siteConfig.banner.position` to adjust the crop (`"top"`, `"center"`, or `"bottom"`), and `siteConfig.banner.credit` to display the image source when needed. Set `siteConfig.banner.enable` to `false` to hide the banner.
 
 | Setting in `src/config.ts` | Purpose |
 | --- | --- |
