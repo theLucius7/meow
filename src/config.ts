@@ -70,9 +70,14 @@ export const profileConfig: ProfileConfig = {
 			url: "https://x.com/theLucius7",
 		},
 		{
-			name: "LinkedIn",
-			icon: "fa6-brands:linkedin",
-			url: "https://www.linkedin.com/in/cixi-luo-1a56563a2/",
+			name: "Bilibili",
+			icon: "fa6-brands:bilibili",
+			url: "https://space.bilibili.com/1814052279",
+		},
+		{
+			name: "Email",
+			icon: "fa6-solid:envelope",
+			url: "mailto:i@lucius7.dev",
 		},
 	],
 };
