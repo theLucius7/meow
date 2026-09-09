@@ -89,7 +89,7 @@ git pull --ff-only
 
 ## Automatic deployment
 
-CI uses Node.js 22, the pinned pnpm version, and the lockfile, then runs `pnpm lint`, `pnpm check`, `pnpm test:i18n`, and `pnpm build`. Merging a validated PR into `main` triggers another full check and build, uploads the output, and deploys it to GitHub Pages. Deployment does not reuse Astro's content cache, preventing deleted posts from reappearing.
+CI uses Node.js 22, the pinned pnpm version, and the lockfile, then runs `pnpm lint`, `pnpm check`, `pnpm test:i18n`, `pnpm test:macflare`, and `pnpm build`. Merging a validated PR into `main` triggers another full check and build, uploads the output, and deploys it to GitHub Pages. Deployment does not reuse Astro's content cache, preventing deleted posts from reappearing.
 
 In [Settings → Pages](https://github.com/xw7qwq/nfuwari/settings/pages), the source should be **GitHub Actions** and the custom domain should be `blog.lucius7.cn`. Commit source files only; no separate `gh-pages` branch is needed.
 
