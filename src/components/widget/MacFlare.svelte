@@ -43,15 +43,6 @@ $: text =
 $: music = state.status === "online" ? state.music : null;
 $: app = state.status === "online" ? state.app : null;
 $: statusText = state.status === "online" ? text.empty : text[state.status];
-$: delay = formatDelay(state.delaySeconds, locale);
-
-function formatDelay(seconds: number, language: Locale): string {
-	if (!Number.isFinite(seconds) || seconds <= 0) return "";
-	const minutes = seconds >= 60;
-	const amount = Math.max(1, Math.round(minutes ? seconds / 60 : seconds));
-	if (language === "en") return `~${amount} ${minutes ? "min" : "sec"} delay`;
-	return `约 ${amount} ${minutes ? "分钟" : "秒"}延迟`;
-}
 
 onMount(() =>
 	subscribeMacFlare(baseUrl, (next) => {
@@ -77,10 +68,7 @@ onMount(() =>
 </script>
 
 <section class="card-base p-4" aria-label={text.heading} data-pagefind-ignore>
-    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <h2 class="text-sm font-bold text-90">{text.heading}</h2>
-        {#if delay}<span class="text-xs text-50">{delay}</span>{/if}
-    </div>
+    <h2 class="mb-3 text-sm font-bold text-90">{text.heading}</h2>
 
     <div aria-live="polite" aria-atomic="true">
         {#if music}
